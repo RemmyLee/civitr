@@ -21,7 +21,7 @@ A simple web interface for interacting with the models.db file released by [rupe
 
 1. Clone this repository
 2. Install required dependencies (Flask, SQLAlchemy, etc.)
-3. Place the models.db file in the root directory
+3. Place the models.db file in the instance directory
 4. Run the application using `python run.py`
 
 ## Configuration
