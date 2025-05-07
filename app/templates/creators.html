@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Creators - CIVITR{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Model Creators</h1>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <form action="{{ url_for('main.creators') }}" method="get" class="d-flex">
+            <select class="form-select me-2" name="sort" onchange="this.form.submit()">
+                <option value="models" {% if current_sort == 'models' %}selected{% endif %}>Sort by Most Models</option>
+                <option value="downloads" {% if current_sort == 'downloads' %}selected{% endif %}>Sort by Most Downloads</option>
+                <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Sort by Name</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Apply</button>
+        </form>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for creator in creators %}
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <img src="{{ creator.image or url_for('static', filename='img/default-avatar.png') }}" 
+                     alt="{{ creator.username }}" class="rounded-circle mb-3" style="width: 100px; height: 100px;">
+                <h5 class="card-title">{{ creator.username }}</h5>
+                
+                <div class="creator-stats d-flex justify-content-around my-3">
+                    <div class="text-center">
+                        <div class="h5 mb-0">{{ creator.models.count() }}</div>
+                        <small class="text-muted">Models</small>
+                    </div>
+                    <div class="text-center">
+                        <div class="h5 mb-0">
+                            {{ creator.models.count() > 0 and creator.models.all()|sum(attribute='download_count') or 0 }}
+                        </div>
+                        <small class="text-muted">Downloads</small>
+                    </div>
+                </div>
+                
+                <a href="{{ url_for('main.creator_detail', creator_id=creator.id) }}" class="btn btn-outline-primary">View Profile</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+<div class="pagination-container mt-4">
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if pagination.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('main.creators', page=pagination.prev_num, sort=current_sort) }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Previous</span>
+            </li>
+            {% endif %}
+            
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('main.creators', page=page_num, sort=current_sort) }}">{{ page_num }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">...</span>
+            </li>
+            {% endif %}
+            {% endfor %}
+            
+            {% if pagination.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('main.creators', page=pagination.next_num, sort=current_sort) }}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Next</span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endblock %}

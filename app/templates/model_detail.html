@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}{{ model.name }} - CIVITR{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1 class="mb-3">{{ model.name }}</h1>
+        <div class="d-flex align-items-center mb-4">
+            <img src="{{ model.creator.image or url_for('static', filename='img/default-avatar.png') }}" 
+                 alt="{{ model.creator.username }}" class="rounded-circle me-2" style="width: 40px; height: 40px;">
+            <span>
+                {% if model.creator_id and model.creator %}
+                    By <a href="{{ url_for('main.creator_detail', creator_id=model.creator_id) }}">{{ model.creator.username }}</a>
+                {% else %}
+                    By Unknown
+                {% endif %}
+            </span>
+            
+            <div class="ms-auto">
+                <span class="badge bg-secondary me-2">{{ model.type }}</span>
+                {% if model.nsfw %}
+                <span class="badge bg-danger">NSFW</span>
+                {% else %}
+                <span class="badge bg-success">SFW</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="model-images mb-4">
+            <div id="modelImagesCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    {% for image in preview_images %}
+                    <button type="button" data-bs-target="#modelImagesCarousel" data-bs-slide-to="{{ loop.index0 }}" 
+                            {% if loop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ loop.index }}"></button>
+                    {% endfor %}
+                </div>
+                <div class="carousel-inner">
+                    {% for image in preview_images %}
+                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                        <img src="{{ image.url }}" class="d-block w-100" alt="Model Preview">
+                    </div>
+                    {% endfor %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#modelImagesCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#modelImagesCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="model-description mb-4">
+            <h3>Description</h3>
+            <div class="card">
+                <div class="card-body">
+                    <p>{{ model.description|safe or 'No description provided.' }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="model-versions mb-4">
+            <h3>Versions</h3>
+            <div class="accordion" id="versionsAccordion">
+                {% for version in versions %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ version.id }}">
+                        <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button" 
+                                data-bs-toggle="collapse" data-bs-target="#collapse{{ version.id }}" 
+                                aria-expanded="{% if loop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ version.id }}">
+                            {{ version.name }} - {{ version.base_model }}
+                        </button>
+                    </h2>
+                    <div id="collapse{{ version.id }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" 
+                         aria-labelledby="heading{{ version.id }}" data-bs-parent="#versionsAccordion">
+                        <div class="accordion-body">
+                            <div class="version-details">
+                                <p><strong>Base Model:</strong> {{ version.base_model }}</p>
+                                <p><strong>Published:</strong> {{ version.published_at }}</p>
+                                <p><strong>Downloads:</strong> {{ version.download_count }}</p>
+                                {% if version.description %}
+                                <p><strong>Description:</strong> {{ version.description|safe }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="version-files mt-3">
+                                <h5>Files</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Size</th>
+                                                <th>Format</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for file in version.files %}
+                                            <tr>
+                                                <td>{{ file.name }}</td>
+                                                <td>{{ (file.size_kb / 1024)|round(2) }} MB</td>
+                                                <td>{{ file.format }}</td>
+                                                <td>
+                                                    {% if file.download_url %}
+                                                    <a href="{{ file.download_url }}" class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-download"></i> Download
+                                                    </a>
+                                                    {% else %}
+                                                    <button class="btn btn-sm btn-secondary" disabled>
+                                                        <i class="fas fa-download"></i> Unavailable
+                                                    </button>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Model Stats</h5>
+            </div>
+            <div class="card-body">
+                <p><i class="fas fa-download me-2"></i> <strong>Downloads:</strong> {{ model.download_count }}</p>
+                <p><i class="fas fa-code-branch me-2"></i> <strong>Versions:</strong> {{ versions|length }}</p>
+                <p><i class="fas fa-calendar me-2"></i> <strong>Latest Update:</strong> 
+                   {{ versions[0].published_at if versions|length > 0 else 'N/A' }}</p>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Tags</h5>
+            </div>
+            <div class="card-body">
+                <div class="tags-container">
+                    {% for tag in tags %}
+                    <a href="{{ url_for('main.models', tags=tag.tag) }}" class="badge bg-primary text-decoration-none me-1 mb-1">
+                        {{ tag.tag }}
+                    </a>
+                    {% else %}
+                    <p class="text-muted">No tags for this model.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">License</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><i class="fas {% if model.allow_no_credit %}fa-check text-success{% else %}fa-times text-danger{% endif %} me-2"></i> 
+                        Allow No Credit
+                    </li>
+                    <li><i class="fas {% if model.allow_derivatives %}fa-check text-success{% else %}fa-times text-danger{% endif %} me-2"></i> 
+                        Allow Derivatives
+                    </li>
+                    <li><i class="fas {% if model.allow_different_license %}fa-check text-success{% else %}fa-times text-danger{% endif %} me-2"></i> 
+                        Allow Different License
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Similar Models</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for similar_model in similar_models %}
+                    <a href="{{ url_for('main.model_detail', model_id=similar_model.id) }}" class="list-group-item list-group-item-action d-flex align-items-center">
+                        {% set preview_image = similar_model.versions.first().images.first() if similar_model.versions.count() > 0 and similar_model.versions.first().images.count() > 0 else none %}
+                        {% if preview_image %}
+                        <img src="{{ preview_image.url }}" class="rounded me-2" style="width: 50px; height: 50px; object-fit: cover;" alt="{{ similar_model.name }}">
+                        {% else %}
+                        <div class="bg-secondary rounded me-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="fas fa-image text-light"></i>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <div class="fw-bold">{{ similar_model.name }}</div>
+                            <small class="text-muted">{{ similar_model.type }}</small>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

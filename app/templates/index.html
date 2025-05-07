@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}CIVITR - Home{% endblock %}
+
+{% block content %}
+<!-- Quick Filter Controls -->
+<div class="quick-filters mb-4">
+    <div class="card">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h5 class="mb-3">Quick Filters</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for type in model_types %}
+                        <a href="{{ url_for('main.models', type=type) }}" class="btn btn-filter">{{ type }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <form action="{{ url_for('main.index') }}" method="get">
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" name="nsfw" value="true" id="nsfwCheck" {% if current_nsfw == 'true' %}checked{% endif %} onchange="this.form.submit()">
+                                    <label class="form-check-label" for="nsfwCheck">
+                                        Include NSFW Content
+                                    </label>
+                                    {% if current_nsfw != 'true' %}
+                                    <input type="hidden" name="nsfw" value="false">
+                                    {% endif %}
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <form action="{{ url_for('main.models') }}" method="get" class="d-flex align-items-center">
+                                <select class="form-select form-select-sm" name="base_model" onchange="this.form.submit()">
+                                    <option value="">Filter by Base Model</option>
+                                    {% for base_model in base_models %}
+                                    <option value="{{ base_model }}">{{ base_model }}</option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Hero Banner -->
+<div class="hero-banner mb-5">
+    <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            {% for image in featured_images %}
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="{{ loop.index0 }}" 
+                    {% if loop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ loop.index }}"></button>
+            {% endfor %}
+        </div>
+        <div class="carousel-inner">
+            {% for image in featured_images %}
+            <div class="carousel-item {% if loop.first %}active{% endif %}">
+                <img src="{{ image.url }}" class="d-block w-100" alt="Featured Image">
+            </div>
+            {% endfor %}
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+</div>
+
+<!-- Featured Categories Section 
+<div class="featured-categories mb-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="section-title">Popular Categories</h2>
+            </div>
+            <hr>
+        </div>
+    </div>
+    <div class="row g-4">
+        {% for type in model_types[:4] %}
+        <div class="col-md-3">
+            <a href="{{ url_for('main.models', type=type) }}" class="category-card">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <div class="category-icon mb-3">
+                            <i class="fas fa-cube fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">{{ type }}</h5>
+                        <p class="card-text text-muted">Explore {{ type }} models</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div> -->
+
+<!-- Random Models Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="section-title">Discover Random Models</h2>
+            <a href="{{ url_for('main.models') }}" class="btn btn-outline-primary">View All Models</a>
+        </div>
+        <hr>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-5 g-4 mb-5">
+    {% for model in random_models %}
+    <div class="col">
+        <div class="card h-100 model-card">
+            {% set preview_image = model.versions.first().images.first() if model.versions.count() > 0 and model.versions.first().images.count() > 0 else none %}
+            <div class="card-img-wrapper">
+                {% if preview_image %}
+                <img src="{{ preview_image.url }}" class="card-img-top" alt="{{ model.name }}">
+                {% else %}
+                <div class="card-img-placeholder">
+                    <i class="fas fa-image fa-3x"></i>
+                </div>
+                {% endif %}
+                {% if model.nsfw %}
+                <span class="nsfw-badge">NSFW</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ model.name }}</h5>
+                <div class="model-info mb-2">
+                    <span class="badge bg-secondary me-1">{{ model.type }}</span>
+                    {% if model.first_version and model.first_version.base_model %}
+                    <span class="badge bg-info">{{ model.first_version.base_model }}</span>
+                    {% endif %}
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        {% if model.creator_id and model.creator %}
+                            By <a href="{{ url_for('main.creator_detail', creator_id=model.creator_id) }}">{{ model.creator.username }}</a>
+                        {% else %}
+                            By Unknown
+                        {% endif %}
+                    </small>
+                    <span class="badge bg-primary"><i class="fas fa-download"></i> {{ model.download_count }}</span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('main.model_detail', model_id=model.id) }}" class="btn btn-sm btn-outline-primary w-100">View Details</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Refresh Button -->
+<div class="text-center mb-5">
+    <a href="{{ url_for('main.index', nsfw=current_nsfw) }}" class="btn btn-primary">
+        <i class="fas fa-random me-2"></i> Show Me More Random Models
+    </a>
+</div>
+{% endblock %}

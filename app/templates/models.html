@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Models - CIVITR{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar filters -->
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Filters</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('main.models') }}" method="get" id="filter-form">
+                    <div class="mb-3">
+                        <label class="form-label">Model Type</label>
+                        <select class="form-select" name="type" onchange="this.form.submit()">
+                            <option value="">All Types</option>
+                            {% for type in model_types %}
+                            <option value="{{ type }}" {% if current_filters.type == type %}selected{% endif %}>{{ type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Add Base Model dropdown -->
+                    <div class="mb-3">
+                        <label class="form-label">Base Model</label>
+                        <select class="form-select" name="base_model" onchange="this.form.submit()">
+                            <option value="">All Base Models</option>
+                            {% for base_model in base_models %}
+                            <option value="{{ base_model }}" {% if current_filters.base_model == base_model %}selected{% endif %}>{{ base_model }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Sort By</label>
+                        <select class="form-select" name="sort" onchange="this.form.submit()">
+                            <option value="newest" {% if current_filters.sort == 'newest' %}selected{% endif %}>Newest</option>
+                            <option value="downloads" {% if current_filters.sort == 'downloads' %}selected{% endif %}>Most Downloaded</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="nsfw" value="true" id="nsfw-check" 
+                                   {% if current_filters.nsfw == 'true' %}checked{% endif %} onchange="this.form.submit()">
+                            <label class="form-check-label" for="nsfw-check">
+                                Include NSFW
+                            </label>
+                            {% if current_filters.nsfw != 'true' %}
+                            <input type="hidden" name="nsfw" value="false">
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Popular Tags</label>
+                        <div class="popular-tags">
+                            {% for tag, count in popular_tags %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="tags" value="{{ tag }}" id="tag-{{ loop.index }}"
+                                       {% if tag in current_filters.tags %}checked{% endif %} onchange="this.form.submit()">
+                                <label class="form-check-label" for="tag-{{ loop.index }}">
+                                    {{ tag }} ({{ count }})
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                        <a href="{{ url_for('main.models') }}" class="btn btn-outline-secondary">Clear Filters</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Models list -->
+    <div class="col-md-9">
+        <h1 class="mb-4">Browse Models</h1>
+        
+        <!-- Add an active filter indicators section -->
+        {% if current_filters.type or current_filters.base_model or current_filters.nsfw == 'true' or current_filters.tags %}
+        <div class="active-filters mb-3">
+            <div class="d-flex flex-wrap gap-2">
+                {% if current_filters.type %}
+                <span class="badge bg-primary d-flex align-items-center">
+                    Type: {{ current_filters.type }}
+                    <a href="{{ url_for('main.models', base_model=current_filters.base_model, sort=current_filters.sort, nsfw=current_filters.nsfw) }}" class="ms-2 text-white text-decoration-none">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </span>
+                {% endif %}
+                
+                {% if current_filters.base_model %}
+                <span class="badge bg-primary d-flex align-items-center">
+                    Base Model: {{ current_filters.base_model }}
+                    <a href="{{ url_for('main.models', type=current_filters.type, sort=current_filters.sort, nsfw=current_filters.nsfw) }}" class="ms-2 text-white text-decoration-none">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </span>
+                {% endif %}
+                
+                {% if current_filters.nsfw == 'true' %}
+                <span class="badge bg-danger d-flex align-items-center">
+                    NSFW
+                    <a href="{{ url_for('main.models', type=current_filters.type, base_model=current_filters.base_model, sort=current_filters.sort) }}" class="ms-2 text-white text-decoration-none">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </span>
+                {% endif %}
+                
+                {% for tag in current_filters.tags %}
+                <span class="badge bg-primary d-flex align-items-center">
+                    Tag: {{ tag }}
+                    <a href="{{ url_for('main.models', type=current_filters.type, base_model=current_filters.base_model, sort=current_filters.sort, nsfw=current_filters.nsfw, tags=current_filters.tags|reject('equalto', tag)|list) }}" class="ms-2 text-white text-decoration-none">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Models grid -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for model in models %}
+            <div class="col">
+                <div class="card h-100 model-card">
+                    {% set preview_image = model.versions.first().images.first() if model.versions.count() > 0 and model.versions.first().images.count() > 0 else none %}
+                    <div class="card-img-wrapper">
+                        {% if preview_image %}
+                        <img src="{{ preview_image.url }}" class="card-img-top" alt="{{ model.name }}">
+                        {% else %}
+                        <div class="card-img-placeholder">
+                            <i class="fas fa-image fa-3x"></i>
+                        </div>
+                        {% endif %}
+                        {% if model.nsfw %}
+                        <span class="nsfw-badge">NSFW</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ model.name }}</h5>
+                        <div class="model-info mb-2">
+                            <span class="badge bg-secondary me-1">{{ model.type }}</span>
+                            {% set base_model = model.versions.first().base_model if model.versions.count() > 0 else None %}
+                            {% if base_model %}
+                            <span class="badge bg-info">{{ base_model }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                {% if model.creator_id and model.creator %}
+                                    By <a href="{{ url_for('main.creator_detail', creator_id=model.creator_id) }}">{{ model.creator.username }}</a>
+                                {% else %}
+                                    By Unknown
+                                {% endif %}
+                            </small>
+                            <span class="badge bg-primary"><i class="fas fa-download"></i> {{ model.download_count }}</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('main.model_detail', model_id=model.id) }}" class="btn btn-sm btn-outline-primary w-100">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination - Update to include base_model parameter -->
+        <div class="pagination-container mt-4">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.models', page=pagination.prev_num, type=current_filters.type, base_model=current_filters.base_model, sort=current_filters.sort, nsfw=current_filters.nsfw) }}">Previous</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                    <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('main.models', page=page_num, type=current_filters.type, base_model=current_filters.base_model, sort=current_filters.sort, nsfw=current_filters.nsfw) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.models', page=pagination.next_num, type=current_filters.type, base_model=current_filters.base_model, sort=current_filters.sort, nsfw=current_filters.nsfw) }}">Next</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CIVITR{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <i class="fas fa-cube me-2"></i> CIVITR
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-th-large me-1"></i> Models
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('main.models') }}">All Models</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% for type in model_types %}
+                            <li><a class="dropdown-item" href="{{ url_for('main.models', type=type) }}">{{ type }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.creators') }}">
+                            <i class="fas fa-users me-1"></i> Creators
+                        </a>
+                    </li>
+                    
+                </ul>
+                <form class="d-flex" action="{{ url_for('main.search') }}" method="get">
+                    <input class="form-control me-2" type="search" name="q" placeholder="Search models, creators, tags..." aria-label="Search">
+                    <button class="btn btn-outline-light" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-dark text-light mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>CIVITR</h5>
+                    <!-- <div class="social-icons mt-3">
+                        <a href="#" class="me-2"><i class="fab fa-twitter fa-lg"></i></a>
+                        <a href="#" class="me-2"><i class="fab fa-discord fa-lg"></i></a>
+                        <a href="#" class="me-2"><i class="fab fa-github fa-lg"></i></a>
+                    </div> -->
+                </div>
+                <div class="col-md-4">
+                    <!--<h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('main.index') }}">Home</a></li>
+                        <li><a href="{{ url_for('main.models') }}">Browse Models</a></li>
+                        <li><a href="{{ url_for('main.creators') }}">Creators</a></li>
+                    </ul> -->
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <!--<h5>Categories</h5>
+                    <div class="d-flex flex-wrap justify-content-md-end">
+                        {% for type in model_types %}
+                        <a href="{{ url_for('main.models', type=type) }}" class="badge bg-primary me-1 mb-1">{{ type }}</a>
+                        {% endfor %}
+                    </div>--->
+                    
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to top button -->
+    <button id="back-to-top" class="btn btn-primary btn-sm rounded-circle">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

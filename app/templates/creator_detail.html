@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}{{ creator.username }} - CIVITR{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <img src="{{ creator.image or url_for('static', filename='img/default-avatar.png') }}" 
+                     alt="{{ creator.username }}" class="rounded-circle mb-3" style="width: 150px; height: 150px;">
+                <h2 class="card-title">{{ creator.username }}</h2>
+                
+                <div class="creator-stats d-flex justify-content-around my-3">
+                    <div class="text-center">
+                        <div class="h4 mb-0">{{ model_count }}</div>
+                        <small class="text-muted">Models</small>
+                    </div>
+                    <div class="text-center">
+                        <div class="h4 mb-0">{{ download_count }}</div>
+                        <small class="text-muted">Downloads</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <h3 class="mb-4">{{ creator.username }}'s Models</h3>
+        
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for model in models %}
+            <div class="col">
+                <div class="card h-100 model-card">
+                    {% set preview_image = model.versions.first().images.first() if model.versions.count() > 0 and model.versions.first().images.count() > 0 else none %}
+                    {% if preview_image %}
+                    <img src="{{ preview_image.url }}" class="card-img-top" alt="{{ model.name }}">
+                    {% else %}
+                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <i class="fas fa-image fa-3x text-light"></i>
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ model.name }}</h5>
+                        <p class="card-text text-muted">{{ model.type }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-secondary">{{ model.versions.count() }} version(s)</span>
+                            <span class="badge bg-primary"><i class="fas fa-download"></i> {{ model.download_count }}</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('main.model_detail', model_id=model.id) }}" class="btn btn-sm btn-outline-primary w-100">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

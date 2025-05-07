@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - AI Model Repository{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Search Results for "{{ query }}"</h1>
+
+<!-- Add filter section -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <form action="{{ url_for('main.search') }}" method="get" class="d-flex align-items-center">
+            <input type="hidden" name="q" value="{{ query }}">
+            <div class="me-2 flex-grow-1">
+                <label class="form-label">Filter by Base Model</label>
+                <select class="form-select" name="base_model" onchange="this.form.submit()">
+                    <option value="">All Base Models</option>
+                    {% for base_model in base_models %}
+                    <option value="{{ base_model }}" {% if current_base_model == base_model %}selected{% endif %}>{{ base_model }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="me-2">
+                <div class="form-check form-switch mt-4">
+                    <input class="form-check-input" type="checkbox" name="nsfw" value="true" id="searchNsfwCheck" 
+                           {% if current_nsfw == 'true' %}checked{% endif %} onchange="this.form.submit()">
+                    <label class="form-check-label" for="searchNsfwCheck">
+                        Include NSFW
+                    </label>
+                    {% if current_nsfw != 'true' %}
+                    <input type="hidden" name="nsfw" value="false">
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Apply</button>
+                {% if current_base_model or current_nsfw == 'true' %}
+                <a href="{{ url_for('main.search', q=query) }}" class="btn btn-outline-secondary ms-2">Clear Filters</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Active filters display -->
+{% if current_base_model or current_nsfw == 'true' %}
+<div class="active-filters mb-3">
+    <div class="d-flex flex-wrap gap-2">
+        {% if current_base_model %}
+        <span class="badge bg-primary d-flex align-items-center">
+            Base Model: {{ current_base_model }}
+            <a href="{{ url_for('main.search', q=query, nsfw=current_nsfw) }}" class="ms-2 text-white text-decoration-none">
+                <i class="fas fa-times"></i>
+            </a>
+        </span>
+        {% endif %}
+        
+        {% if current_nsfw == 'true' %}
+        <span class="badge bg-danger d-flex align-items-center">
+            NSFW Content Included
+            <a href="{{ url_for('main.search', q=query, base_model=current_base_model, nsfw='false') }}" class="ms-2 text-white text-decoration-none">
+                <i class="fas fa-times"></i>
+            </a>
+        </span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<ul class="nav nav-tabs mb-4" id="searchTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="models-tab" data-bs-toggle="tab" data-bs-target="#models" type="button" role="tab">
+            Models <span class="badge bg-secondary">{{ model_pagination.total }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="creators-tab" data-bs-toggle="tab" data-bs-target="#creators" type="button" role="tab">
+            Creators <span class="badge bg-secondary">{{ creators|length }}</span>
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="searchTabsContent">
+    <div class="tab-pane fade show active" id="models" role="tabpanel" aria-labelledby="models-tab">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for model in models %}
+            <div class="col">
+                <div class="card h-100 model-card">
+                    {% set preview_image = model.versions.first().images.first() if model.versions.count() > 0 and model.versions.first().images.count() > 0 else none %}
+                    <div class="card-img-wrapper">
+                        {% if preview_image %}
+                        <img src="{{ preview_image.url }}" class="card-img-top" alt="{{ model.name }}">
+                        {% else %}
+                        <div class="card-img-placeholder">
+                            <i class="fas fa-image fa-3x"></i>
+                        </div>
+                        {% endif %}
+                        {% if model.nsfw %}
+                        <span class="nsfw-badge">NSFW</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ model.name }}</h5>
+                        <p class="card-text text-muted">{{ model.type }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                {% if model.creator_id and model.creator %}
+                                    By <a href="{{ url_for('main.creator_detail', creator_id=model.creator_id) }}">{{ model.creator.username }}</a>
+                                {% else %}
+                                    By Unknown
+                                {% endif %}
+                            </small>
+                            <span class="badge bg-primary"><i class="fas fa-download"></i> {{ model.download_count }}</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('main.model_detail', model_id=model.id) }}" class="btn btn-sm btn-outline-primary w-100">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    No models found matching "{{ query }}"{% if current_base_model %} with base model "{{ current_base_model }}"{% endif %}{% if current_nsfw != 'true' %} (NSFW content excluded){% endif %}.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination - Update to include base_model parameter -->
+        {% if models %}
+        <div class="pagination-container mt-4">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if model_pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.search', q=query, base_model=current_base_model, nsfw=current_nsfw, page=model_pagination.prev_num) }}">Previous</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in model_pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                    <li class="page-item {% if page_num == model_pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('main.search', q=query, base_model=current_base_model, nsfw=current_nsfw, page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if model_pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.search', q=query, base_model=current_base_model, nsfw=current_nsfw, page=model_pagination.next_num) }}">Next</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="tab-pane fade" id="creators" role="tabpanel" aria-labelledby="creators-tab">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for creator in creators %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <img src="{{ creator.image or url_for('static', filename='img/default-avatar.png') }}" 
+                             alt="{{ creator.username }}" class="rounded-circle mb-3" style="width: 100px; height: 100px;">
+                        <h5 class="card-title">{{ creator.username }}</h5>
+                        
+                        <div class="creator-stats d-flex justify-content-around my-3">
+                            <div class="text-center">
+                                <div class="h5 mb-0">{{ creator.models.count() }}</div>
+                                <small class="text-muted">Models</small>
+                            </div>
+                            <div class="text-center">
+                                <div class="h5 mb-0">
+                                    {{ creator.models.count() > 0 and creator.models.all()|sum(attribute='download_count') or 0 }}
+                                </div>
+                                <small class="text-muted">Downloads</small>
+                            </div>
+                        </div>
+                        
+                        <a href="{{ url_for('main.creator_detail', creator_id=creator.id) }}" class="btn btn-outline-primary">View Profile</a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    No creators found matching "{{ query }}".
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
