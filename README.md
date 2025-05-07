@@ -1,4 +1,7 @@
 ![image](https://github.com/user-attachments/assets/1014498f-b60d-4c03-9704-89e28a78c1a4)
 
 
-A simple web interface for interaqcting with the models.db file released by https://www.reddit.com/user/rupertavery (https://www.reddit.com/r/StableDiffusion/comments/1kfvt73/civitai_model_database_checkpoints_and_loras/)
+A simple web interface for interacting with the models.db file released by https://www.reddit.com/user/rupertavery 
+
+(https://www.reddit.com/r/StableDiffusion/comments/1kfvt73/civitai_model_database_checkpoints_and_loras/)
+
